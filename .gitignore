@@ -1,0 +1,5 @@
+.cbqn_repl_history
+*.txt
+*.dll
+*.so
+*.dylib
