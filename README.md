@@ -10,6 +10,8 @@ tinyfd ← ⟨ parentFolderOfDLL ⟩ •Import "tinyfd.bqn"
 ```
 If no argument is supplied, use the default search path.
 
+You can get the dynamic library [here](https://sourceforge.net/p/tinyfiledialogs/code/ci/master/tree/dll_cs_lua_R_fortran_pascal/).
+
 ### API
 
 #### Dialogs
@@ -78,7 +80,7 @@ If no argument is supplied, use the default search path.
 - returns the selected color as a list of three integers or a string in the format `"#RRGGBB"`, or `@` if cancelled.
 
 
-#### Other functions
+#### Others
 
 ```bqn
 tinyfd.Beep @
@@ -105,4 +107,4 @@ tinyfd.AllowCursesDialogs
 tinyfd.ForceConsole
 tinyfd.AssumeGraphicDisplay
 ```
-Global variable to control the behavior of tinyfiledialogs; call with `@` to query the value, `0` or `1` to set the value.
+Control the behavior of tinyfiledialogs; call with `@` to query the value, `0` or `1` to set the value.
