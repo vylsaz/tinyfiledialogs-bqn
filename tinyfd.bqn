@@ -1,17 +1,17 @@
 ⟨ os, ⟨ arch ⟩ ⇐ cpu ⟩ ← •platform
 # https://sourceforge.net/p/tinyfiledialogs/code/ci/master/tree/dll_cs_lua_R_fortran_pascal/
-dll‿null ← {a‿b: (({ ⟨⟩: ""; ⊑𝕩 }•args)•file.At a)‿b} {
+dll ← ({ ⟨⟩: ""; ⊑𝕩 }•args)•file.At {
     { "windows":
-        { "x86-64": "tinyfiledialogs64.dll"‿⟨ 0, 0 ⟩
-        ; "x86": "tinyfiledialogs32.dll"‿⟨ 0 ⟩
+        { "x86-64": "tinyfiledialogs64.dll"
+        ; "x86": "tinyfiledialogs32.dll"
         } arch
     ; "linux":
-        { "x86-64": "tinyfiledialogsLinux64.so"‿⟨ 0, 0 ⟩
-        ; "x86": "tinyfiledialogsLinux86.so"‿⟨ 0 ⟩
+        { "x86-64": "tinyfiledialogsLinux64.so"
+        ; "x86": "tinyfiledialogsLinux86.so"
         } arch
     ; "darwin":
-        { "x86-64": "tinyfiledialogsIntel.dylib"‿⟨ 0, 0 ⟩
-        ; "aarch64": "tinyfiledialogsAppleSilicon.dylib"‿⟨ 0, 0 ⟩
+        { "x86-64": "tinyfiledialogsIntel.dylib"
+        ; "aarch64": "tinyfiledialogsAppleSilicon.dylib"
         } arch
     } os
 }
@@ -23,23 +23,14 @@ u8   ← {t ⇐ "u8"}
 Ptr  ← {t ⇐ "*"∾𝕩.t}
 Out  ← {t ⇐ "&"∾𝕩.t}
 
-rawPtr ← {t ⇐ "*:i32"}
-
-cstr ← {t ⇐ (Ptr char).t}
-cstrOrNull ← {t ⇐ rawPtr.t}
-
-ptrPtr ← {t ⇐ "*i32"}
-
+rawPtr ← Ptr void
+cstr ← Ptr char
+cstrOrNull ← Ptr char
+null ← •foreign.null
+nullI8 ← null.Cast "i8"
+IsNull ← { 0=nullI8.Sub 𝕩.Cast "i8" }
+ReadCstr ← { IsNull 𝕩? @; •foreign.ReadCharsTo0 𝕩 }
 ToCstr ← ∾⟜@ •ToUTF8
-
-strlen ← @•FFI "i64"‿"strlen"‿(">"∾cstrOrNull.t)
-memcpy ← @•FFI "&"‿"memcpy"‿"&i8"‿(cstrOrNull.t)‿"i64"
-
-ReadCstr ← { null≡𝕩? @;
-    n ← Strlen 𝕩
-    utf8 ← Memcpy ⟨ n⥊0, 𝕩, n ⟩
-    •FromUTF8 utf8
-}
 
 _ffiWith_ ← {
     n ← @≡𝕩
@@ -61,10 +52,6 @@ _ffiWith_ ← {
         r
     }
 }
-
-free ← void "free"_ffiWith_@ rawPtr
-strdup ← rawPtr {os≡"windows"? "_strdup"; "strdup"}_ffiWith_@ cstr
-
 _ffi ← {𝔽 _ffiWith_ dll}
 
 tinyfd_getGlobalChar ← cstrOrNull "tinyfd_getGlobalChar"_ffi cstr
@@ -119,14 +106,14 @@ tinyfd_saveFileDialog ← cstrOrNull "tinyfd_saveFileDialog"_ffi ⟨
     cstr,   # title
     cstr,   # default path and/or file (ends with / to set only a directory)
     int,    # num of filter patterns
-    ptrPtr, # filter patterns (like {"*.txt"})
+    Ptr cstr,   # filter patterns (like {"*.txt"})
     cstr,   # single filter description
 ⟩ # returns NULL on cancel
 tinyfd_openFileDialog ← cstrOrNull "tinyfd_openFileDialog"_ffi ⟨
     cstr,   # title
     cstr,   # default path and/or file (ends with / to set only a directory)
     int,    # num of filter patterns
-    ptrPtr, # filter patterns (like {"*.png","*.jpg"})
+    Ptr cstr,   # filter patterns (like {"*.png","*.jpg"})
     cstr,   # single filter description
     int,    # allow multiple selects
 ⟩ # returns NULL on cancel
@@ -137,7 +124,7 @@ tinyfd_selectFolderDialog ← cstrOrNull "tinyfd_selectFolderDialog"_ffi ⟨
 ⟩ # returns NULL on cancel
 tinyfd_colorChooser ← rawPtr "tinyfd_colorChooser"_ffi ⟨
     cstr,   # title
-    rawPtr, # default hex RGB or NULL
+    cstrOrNull, # default hex RGB or NULL
     Ptr u8, # default RGB[3]
     Out u8, # result RGB[3]
 ⟩
@@ -197,18 +184,14 @@ title 𝕊 message:
 
 _saveFileDialog ⇐ { 𝔽 _𝕣 𝕩: "" 𝔽 _𝕣 𝕩;
 title desc‿patt _𝕣 path:
-    p ← Strdup¨patt
-    r ← Tinyfd_saveFileDialog ⟨ title, path, ≠p, ∾p, desc ⟩
-    Free¨p
-    r
+    p ← ToCstr¨patt
+    Tinyfd_saveFileDialog ⟨ title, path, ≠p, p, desc ⟩
 }
 
 _openFileDialogRaw_ ⇐ { 𝔽 _𝕣_ 𝔾 𝕩: "" 𝔽 _𝕣_ 𝔾 𝕩;
 title desc‿patt _𝕣_ allowMultiSelects path:
-    p ← Strdup¨patt
-    r ← Tinyfd_openFileDialog ⟨ title, path, ≠p, ∾p, desc, allowMultiSelects ⟩
-    Free¨p
-    r
+    p ← ToCstr¨patt
+    Tinyfd_openFileDialog ⟨ title, path, ≠p, p, desc, allowMultiSelects ⟩
 }
 
 _openFileDialogMulti ⇐ {
@@ -225,21 +208,19 @@ title 𝕊 path:
 ColorChooserRaw ← { 𝕊 𝕩: "" 𝕊 𝕩;
 title 𝕊 default:
     defaultStr‿defaultRGB ← {
-    '#'≡⊑default? ⟨ Strdup ToCstr default, 3⥊0 ⟩
-    ; 3≥≠default? ⟨ null, 3↑default ⟩
+    '#'≡⊑default? ⟨ ToCstr default, 3⥊0 ⟩
+    ; 3≡≠default? ⟨ null, default ⟩
     ; !"unknown color "∾•Fmt default
     }
-    ptr‿rgb ← Tinyfd_colorChooser ⟨ title, defaultStr, defaultRGB, 3⥊0 ⟩
-    Free defaultStr
-    ⟨ ReadCstr ptr, rgb ⟩
+    Tinyfd_colorChooser ⟨ title, defaultStr, defaultRGB, 3⥊0 ⟩
 }
 
 ColorChooser ⇐ {
-    str‿rgb ← 𝕨 ColorChooserRaw 𝕩
-    { str≡@? @; rgb }
+    ptr‿rgb ← 𝕨 ColorChooserRaw 𝕩
+    { IsNull ptr? @; rgb }
 }
 
-ColorChooserHex ⇐ { ⊑ 𝕨 ColorChooserRaw 𝕩 }
+ColorChooserHex ⇐ { ReadCstr ⊑ 𝕨 ColorChooserRaw 𝕩 }
 
 # from original header
 #
