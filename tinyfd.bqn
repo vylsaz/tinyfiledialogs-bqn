@@ -1,18 +1,18 @@
-⟨ os, cpu ⟩ ← •platform
+⟨ os, ⟨ arch ⟩ ⇐ cpu ⟩ ← •platform
 # https://sourceforge.net/p/tinyfiledialogs/code/ci/master/tree/dll_cs_lua_R_fortran_pascal/
-dll ← ({ ⟨⟩: ""; ⊑𝕩 }•args)•file.At {
+dll‿null ← {a‿b: (({ ⟨⟩: ""; ⊑𝕩 }•args)•file.At a)‿b} {
     { "windows":
-        { "x86-64": "tinyfiledialogs64.dll"
-        ; "x86": "tinyfiledialogs32.dll"
-        } cpu.arch
+        { "x86-64": "tinyfiledialogs64.dll"‿⟨ 0, 0 ⟩
+        ; "x86": "tinyfiledialogs32.dll"‿⟨ 0 ⟩
+        } arch
     ; "linux":
-        { "x86-64": "tinyfiledialogsLinux64.so"
-        ; "x86": "tinyfiledialogsLinux86.so"
-        } cpu.arch
+        { "x86-64": "tinyfiledialogsLinux64.so"‿⟨ 0, 0 ⟩
+        ; "x86": "tinyfiledialogsLinux86.so"‿⟨ 0 ⟩
+        } arch
     ; "darwin":
-        { "x86-64": "tinyfiledialogsIntel.dylib"
-        ; "aarch64": "tinyfiledialogsAppleSilicon.dylib"
-        } cpu.arch
+        { "x86-64": "tinyfiledialogsIntel.dylib"‿⟨ 0, 0 ⟩
+        ; "aarch64": "tinyfiledialogsAppleSilicon.dylib"‿⟨ 0, 0 ⟩
+        } arch
     } os
 }
 
@@ -31,8 +31,6 @@ cstrOrNull ← {t ⇐ rawPtr.t}
 ptrPtr ← {t ⇐ "*i32"}
 
 ToCstr ← ∾⟜@ •ToUTF8
-
-null ← 0‿0
 
 strlen ← @•FFI "i64"‿"strlen"‿(">"∾cstrOrNull.t)
 memcpy ← @•FFI "&"‿"memcpy"‿"&i8"‿(cstrOrNull.t)‿"i64"
